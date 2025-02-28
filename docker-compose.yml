@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  server:
+    image: alpine:latest
+    container_name: server
+    command: sh /app/server.sh
+    volumes:
+      - ./server:/app
+      - ./shared_keys:/app/keys
+    networks:
+      server_net:
+        ipv4_address: 172.20.0.2
+      attacker_net:
+        ipv4_address: 172.21.0.2
+
+  client:
+    image: alpine:latest
+    container_name: client
+    command: sh /app/client.sh
+    volumes:
+      - ./client:/app
+      - ./shared_keys:/app/keys
+    networks:
+      client_net:
+        ipv4_address: 172.22.0.2
+      attacker_net:
+        ipv4_address: 172.21.0.3
+
+  attacker:
+    image: alpine:latest
+    container_name: attacker
+    command: sh /app/attacker.sh
+    volumes:
+      - ./attacker:/app
+    networks:
+      attacker_net:
+        ipv4_address: 172.21.0.4
+
+networks:
+  server_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  client_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+  attacker_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
