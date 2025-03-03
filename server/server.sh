@@ -1,21 +1,25 @@
 #!/bin/sh
-# Actualizar e instalar paquetes necesarios
-apk update && apk add --no-cache openssl netcat-openbsd
+# Install dependencies
+apk update && apk add --no-cache openssl socat
 
-echo "Servidor: Esperando a que se genere la clave pública del cliente..."
-# Espera hasta que la clave pública del cliente esté disponible en el volumen compartido
-while [ ! -f /app/keys/client_public.pem ]; do
+# Generate server keys if missing
+if [ ! -f /app/server_private.pem ]; then
+  echo "Server: Generating RSA keys..."
+  openssl genrsa -out /app/server_private.pem 2048
+  openssl rsa -in /app/server_private.pem -pubout -out /shared_keys/server_public.pem
+fi
+
+# Wait for client's public key
+echo "Server: Waiting for client's public key..."
+while [ ! -f /shared_keys/client_public.pem ]; do
   sleep 2
 done
-echo "Servidor: Clave pública del cliente encontrada."
 
-# Generar (o actualizar) el archivo de resultados médicos
-echo "Resultados médicos: El paciente se encuentra en óptimas condiciones." > /app/results.txt
+# Encrypt medical results
+echo "Server: Encrypting results..."
+openssl rsautl -encrypt -pubin -inkey /shared_keys/client_public.pem \
+  -in /app/results.txt -out /app/encrypted.txt
 
-echo "Servidor: Cifrando el documento con la clave pública del cliente..."
-# Cifrar el documento usando la clave pública del cliente
-openssl rsautl -encrypt -pubin -inkey /app/keys/client_public.pem -in /app/results.txt -out /app/encrypted.txt
-
-echo "Servidor: Iniciando servidor TCP en el puerto 5000 (attacker_net)..."
-# Escucha en el puerto 5000 en todas las interfaces (incluye attacker_net)
-cat /app/encrypted.txt | nc -l -p 5000
+# Send encrypted file through attacker
+echo "Server: Listening for connections on 172.20.0.2:5000..."
+socat TCP-LISTEN:5000,fork,reuseaddr FILE:/app/encrypted.txt

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   server:
     image: alpine:latest
@@ -7,12 +5,10 @@ services:
     command: sh /app/server.sh
     volumes:
       - ./server:/app
-      - ./shared_keys:/app/keys
+      - ./shared_keys:/shared_keys
     networks:
       server_net:
         ipv4_address: 172.20.0.2
-      attacker_net:
-        ipv4_address: 172.21.0.2
 
   client:
     image: alpine:latest
@@ -20,12 +16,10 @@ services:
     command: sh /app/client.sh
     volumes:
       - ./client:/app
-      - ./shared_keys:/app/keys
+      - ./shared_keys:/shared_keys
     networks:
       client_net:
         ipv4_address: 172.22.0.2
-      attacker_net:
-        ipv4_address: 172.21.0.3
 
   attacker:
     image: alpine:latest
@@ -34,8 +28,12 @@ services:
     volumes:
       - ./attacker:/app
     networks:
-      attacker_net:
-        ipv4_address: 172.21.0.4
+      server_net:
+        ipv4_address: 172.20.0.3
+      client_net:
+        ipv4_address: 172.22.0.3
+    cap_add:
+      - NET_ADMIN
 
 networks:
   server_net:
@@ -48,8 +46,3 @@ networks:
     ipam:
       config:
         - subnet: 172.22.0.0/16
-  attacker_net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16

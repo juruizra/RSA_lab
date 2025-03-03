@@ -1,26 +1,26 @@
 #!/bin/sh
-# Actualizar e instalar paquetes necesarios
+# Install dependencies
 apk update && apk add --no-cache openssl netcat-openbsd
 
-# Verificar si ya existen las llaves RSA; si no, generarlas
-if [ ! -f /app/private.pem ]; then
-  echo "Cliente: Generando par de llaves RSA..."
-  openssl genrsa -out /app/private.pem 2048
-  openssl rsa -in /app/private.pem -pubout -out /app/public.pem
-  # Compartir la clave pública para que el servidor la encuentre
-  cp /app/public.pem /app/keys/client_public.pem
-  echo "Cliente: Llaves generadas y clave pública compartida."
+# Generate client keys if missing
+if [ ! -f /app/client_private.pem ]; then
+  echo "Client: Generating RSA keys..."
+  openssl genrsa -out /app/client_private.pem 2048
+  openssl rsa -in /app/client_private.pem -pubout -out /shared_keys/client_public.pem
 fi
 
-# Dar tiempo al servidor para que esté listo y detecte la clave pública
+# Wait for server to be ready
+echo "Client: Waiting for server..."
 sleep 10
 
-echo "Cliente: Conectándose al servidor (172.21.0.2) para recibir el archivo cifrado..."
-# Conectar al servidor usando la IP de attacker_net (172.21.0.2) y recibir el archivo cifrado
-nc 172.21.0.2 5000 > /app/encrypted.txt
+# Receive encrypted file via attacker
+echo "Client: Connecting to attacker (172.22.0.3:5000)..."
+nc 172.22.0.3 5000 > /app/encrypted.txt
 
-echo "Cliente: Descifrando el archivo recibido..."
-# Descifrar el archivo usando la clave privada
-openssl rsautl -decrypt -inkey /app/private.pem -in /app/encrypted.txt -out /app/decrypted.txt
+# Decrypt results
+echo "Client: Decrypting results..."
+openssl rsautl -decrypt -inkey /app/client_private.pem \
+  -in /app/encrypted.txt -out /app/decrypted.txt
 
-echo "Cliente: Proceso completado. Revisa 'decrypted.txt' para ver el contenido descifrado."
+echo "Client: Decryption complete. Results:"
+cat /app/decrypted.txt
