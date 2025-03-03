@@ -17,10 +17,11 @@ sleep 10
 echo "Client: Connecting to attacker (172.22.0.3:5000)..."
 nc 172.22.0.3 5000 > /app/encrypted.txt
 
-# Decrypt results
+# Decrypt results using pkeyutl 
 echo "Client: Decrypting results..."
-openssl rsautl -decrypt -inkey /app/client_private.pem \
+openssl pkeyutl -decrypt -inkey /app/client_private.pem \
   -in /app/encrypted.txt -out /app/decrypted.txt
 
 echo "Client: Decryption complete. Results:"
 cat /app/decrypted.txt
+
