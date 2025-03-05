@@ -141,6 +141,11 @@ git clone https://github.com/juruizra/rsa_lab
     
     ```sh
     cd home/  # No necesario, puedes ejecutar desde cualquier ruta
+    ```
+    ```sh
+    python3 -m venv env
+    ```
+    ```sh
     . env/bin/activate
     ```
     
@@ -150,7 +155,7 @@ git clone https://github.com/juruizra/rsa_lab
     pip install scapy pycryptodome sympy
     ```
     
-7. Verificar que la clave pública del cliente esté en la carpeta del atacante. Puedes también montar la carpeta `shared_keys` agregando esta línea en `docker-compose.yml` dentro del servicio del atacante:
+7. Verificar que la clave pública del cliente esté en la carpeta del atacante (la puedes copiar a la carpeta montada de `attacker`. Puedes también montar la carpeta `shared_keys` agregando esta línea en `docker-compose.yml` dentro del servicio del atacante y volver a ejecutar el compose:
     
     ```yaml
     volumes:
